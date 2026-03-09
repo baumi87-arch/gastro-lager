@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lager – Entnahme</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F0F0F;
+    --surface: #1A1A1A;
+    --surface2: #242424;
+    --border: #2E2E2E;
+    --text: #F0EDE8;
+    --muted: #666;
+    --accent: #E8C547;
+    --green: #4ADE80;
+    --yellow: #FBBF24;
+    --red: #F87171;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 440px;
+  }
+  .setup-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+  }
+  .setup-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .setup-card p { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .field-group { margin-bottom: 18px; }
+  .field-group label { display: block; font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .field-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-group input:focus { border-color: var(--accent); }
+  .field-group input::placeholder { color: var(--muted); }
+  .help-text { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .help-text a { color: var(--accent); text-decoration: none; }
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0F0F0F;
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .steps-hint {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .steps-hint h4 { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .hint-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .hint-num { width: 22px; height: 22px; background: var(--surface2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .hint-step p { font-size: 13px; color: #888; line-height: 1.5; }
+  .hint-step strong { color: var(--text); }
+
+  /* MAIN APP */
+  #app-screen { display: none; min-height: 100vh; flex-direction: column; }
+
+  /* Header */
+  .app-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .app-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .app-title span { color: var(--accent); }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .btn-icon {
+    width: 38px; height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.15s;
+  }
+  .btn-icon:active { background: var(--surface2); }
+
+  /* Filter tabs */
+  .filter-bar {
+    padding: 14px 20px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-tab {
+    padding: 7px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .filter-tab.active { background: var(--accent); color: #0F0F0F; border-color: var(--accent); font-weight: 700; }
+
+  /* Search */
+  .search-wrap { padding: 12px 20px; }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px 12px 42px;
+    color: var(--text);
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    position: relative;
+  }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 36px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .stats-bar::-webkit-scrollbar { display: none; }
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .stat-pill .val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .stat-pill .lbl { font-size: 11px; color: var(--muted); }
+
+  /* Article list */
+  .article-list { padding: 0 20px 100px; display: flex; flex-direction: column; gap: 10px; }
+
+  .article-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .article-card.status-warn { border-color: rgba(251,191,36,0.3); }
+  .article-card.status-empty { border-color: rgba(248,113,113,0.4); }
+
+  .card-top {
+    padding: 16px 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 100px;
+    background: var(--surface2);
+    color: #888;
+    border: 1px solid var(--border);
+  }
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-ok { background: rgba(74,222,128,0.12); color: var(--green); }
+  .status-warn { background: rgba(251,191,36,0.12); color: var(--yellow); }
+  .status-empty { background: rgba(248,113,113,0.15); color: var(--red); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .card-stock {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .stock-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stock-unit { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Entnahme section */
+  .card-bottom {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface2);
+  }
+  .qty-controls { display: flex; align-items: center; gap: 8px; }
+  .qty-btn {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 300;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s;
+    flex-shrink: 0;
+  }
+  .qty-btn:active { background: var(--border); }
+  .qty-input {
+    width: 52px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 6px;
+    text-align: center;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+  }
+  .qty-input:focus { border-color: var(--accent); }
+  .btn-entnehmen {
+    flex: 1;
+    background: var(--accent);
+    color: #0F0F0F;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+  .btn-entnehmen:active { transform: scale(0.97); }
+  .btn-entnehmen:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-entnehmen.loading { opacity: 0.7; }
+  .btn-hinzufuegen {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--green);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-hinzufuegen:active { background: var(--border); }
+
+  /* Loading / empty states */
+  .loading-state, .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,222,128,0.4); color: var(--green); }
+  .toast.error { border-color: rgba(248,113,113,0.4); color: var(--red); }
+
+  /* Settings modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px 40px;
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .btn-danger {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--red);
+    border-radius: 10px;
+    padding: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">🍽 Gastro Lager</div>
+    <h2>Verbindung einrichten</h2>
+    <p>Verbinde diese App mit deiner Airtable-Datenbank. Du brauchst nur 2 Minuten.</p>
+
+    <div class="field-group">
+      <label>Airtable API Token</label>
+      <input type="password" id="api-token" placeholder="patXXXXXXXXXXXXXX.XXXXX..." />
+      <div class="help-text">
+        Gehe zu <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a> → „Create token" → Scope: <strong>data.records:read</strong> + <strong>data.records:write</strong> → deine Base auswählen
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Base ID</label>
+      <input type="text" id="base-id" placeholder="appXXXXXXXXXXXXXX" />
+      <div class="help-text">In der Airtable URL: airtable.com/<strong>appXXXX</strong>/...</div>
+    </div>
+
+    <div class="field-group">
+      <label>Tabellenname</label>
+      <input type="text" id="table-name" placeholder="Lagerbestand" value="Lagerbestand" />
+    </div>
+
+    <button class="btn-primary" onclick="connectAirtable()">🔗 Verbinden & starten</button>
+
+    <div class="steps-hint">
+      <h4>So findest du die Daten</h4>
+      <div class="hint-step">
+        <div class="hint-num">1</div>
+        <p>Gehe zu <strong>airtable.com/create/tokens</strong> und erstelle einen neuen Token mit Read+Write Berechtigung auf deine Base</p>
+      </div>
+      <div class="hint-step">
+        <div class="hint-num">2</div>
+        <p>Die <strong>Base ID</strong> findest du in der URL wenn du deine Base öffnest: <strong>app</strong>XXXXXXXX</p>
+      </div>
+      <div class="hint-step">
+        <div class="hint-num">3</div>
+        <p>Tabellenname = genau so wie deine Tabelle in Airtable heißt (Standard: <strong>Lagerbestand</strong>)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-screen">
+  <div class="app-header">
+    <div class="app-title">Lager <span>·</span> Entnahme</div>
+    <div class="header-actions">
+      <div class="btn-icon" onclick="loadArticles()" title="Aktualisieren">↻</div>
+      <div class="btn-icon" onclick="openSettings()" title="Einstellungen">⚙</div>
+    </div>
+  </div>
+
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-tab active" onclick="setFilter('Alle', this)">Alle</button>
+    <button class="filter-tab" onclick="setFilter('🚨 Nachbestellen', this)">🚨 Nachbestellen</button>
+    <button class="filter-tab" onclick="setFilter('Bar', this)">🍷 Bar</button>
+    <button class="filter-tab" onclick="setFilter('Küche', this)">🍳 Küche</button>
+    <button class="filter-tab" onclick="setFilter('Verbrauchsmaterial', this)">📦 Material</button>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="search-input" placeholder="Artikel suchen..." oninput="renderList()" />
+  </div>
+
+  <div class="stats-bar" id="stats-bar"></div>
+
+  <div class="article-list" id="article-list">
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Lade Artikel...</p>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Einstellungen</div>
+    <div class="field-group">
+      <label>Verbundene Base</label>
+      <input type="text" id="settings-base" readonly style="opacity:0.5" />
+    </div>
+    <div class="field-group">
+      <label>Tabelle</label>
+      <input type="text" id="settings-table" readonly style="opacity:0.5" />
+    </div>
+    <button class="btn-primary" onclick="closeSettings()">✓ Schließen</button>
+    <button class="btn-danger" onclick="resetApp()">🔌 Verbindung trennen & neu einrichten</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let articles = [];
+let currentFilter = 'Alle';
+let config = {};
+
+// --- INIT ---
+window.onload = () => {
+  const saved = localStorage.getItem('gastro_config');
+  if (saved) {
+    config = JSON.parse(saved);
+    showApp();
+    loadArticles();
+  }
+};
+
+async function connectAirtable() {
+  const token = document.getElementById('api-token').value.trim();
+  const baseId = document.getElementById('base-id').value.trim();
+  const tableName = document.getElementById('table-name').value.trim();
+
+  if (!token || !baseId || !tableName) {
+    showToast('Bitte alle Felder ausfüllen', 'error'); return;
+  }
+
+  config = { token, baseId, tableName };
+  showApp();
+  await loadArticles();
+
+  if (articles.length > 0) {
+    localStorage.setItem('gastro_config', JSON.stringify(config));
+  }
+}
+
+function showApp() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  document.getElementById('settings-base').value = config.baseId;
+  document.getElementById('settings-table').value = config.tableName;
+}
+
+// --- AIRTABLE FETCH with proxy fallback ---
+const PROXIES = [
+  (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+];
+
+async function airtableFetch(path, options = {}) {
+  const target = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(config.tableName)}${path}`;
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy(target), options);
+      return res;
+    } catch(e) { /* try next */ }
+  }
+  throw new Error('Verbindung fehlgeschlagen – Internetverbindung prüfen');
+}
+
+// --- LOAD DATA ---
+async function loadArticles() {
+  document.getElementById('article-list').innerHTML = `
+    <div class="loading-state"><div class="loading-spinner"></div><p>Lade Artikel...</p></div>`;
+
+  try {
+    const res = await airtableFetch('?pageSize=100', {
+      headers: { 'Authorization': `Bearer ${config.token}` }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `HTTP ${res.status}`;
+      if (res.status === 401) throw new Error('Token ungültig – bitte prüfen ob der Token Read-Rechte auf diese Base hat');
+      if (res.status === 403) throw new Error('Kein Zugriff – Token braucht "data.records:read" Berechtigung für diese Base');
+      if (res.status === 404) throw new Error('Base ID oder Tabellenname nicht gefunden – bitte prüfen');
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    articles = data.records.map(r => ({
+      id: r.id,
+      name: r.fields['Artikelname'] || '–',
+      kategorie: r.fields['Kategorie'] || '',
+      einheit: r.fields['Einheit'] || 'Stück',
+      bestand: parseFloat(r.fields['Aktueller Bestand']) || 0,
+      mindest: parseFloat(r.fields['Mindestmenge']) || 0,
+      lieferant: r.fields['Lieferant'] || '',
+    }));
+
+    renderStats();
+    renderList();
+    localStorage.setItem('gastro_config', JSON.stringify(config));
+
+  } catch (e) {
+    document.getElementById('article-list').innerHTML = `
+      <div class="empty-state"><div class="icon">⚠️</div><p>Fehler: ${e.message}</p><br>
+      <small style="color:#555">API Token, Base ID oder Tabellenname prüfen</small></div>`;
+    showToast('Verbindungsfehler: ' + e.message, 'error');
+  }
+}
+
+// --- RENDER ---
+function getStatus(a) {
+  if (a.bestand <= 0) return { label: 'LEER', cls: 'status-empty' };
+  if (a.bestand <= a.mindest) return { label: 'NACHBESTELLEN', cls: 'status-warn' };
+  return { label: 'OK', cls: 'status-ok' };
+}
+
+function renderStats() {
+  const ok = articles.filter(a => a.bestand > a.mindest).length;
+  const warn = articles.filter(a => a.bestand > 0 && a.bestand <= a.mindest).length;
+  const empty = articles.filter(a => a.bestand <= 0).length;
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat-pill"><span class="val" style="color:var(--text)">${articles.length}</span><span class="lbl">Artikel</span></div>
+    <div class="stat-pill"><span class="val" style="color:var(--green)">${ok}</span><span class="lbl">OK</span></div>
+    ${warn > 0 ? `<div class="stat-pill"><span class="val" style="color:var(--yellow)">${warn}</span><span class="lbl">Nachbestellen</span></div>` : ''}
+    ${empty > 0 ? `<div class="stat-pill"><span class="val" style="color:var(--red)">${empty}</span><span class="lbl">Leer</span></div>` : ''}
+  `;
+}
+
+function renderList() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+
+  let filtered = articles.filter(a => {
+    const s = getStatus(a);
+    if (currentFilter === '🚨 Nachbestellen') return s.cls !== 'status-ok';
+    if (currentFilter !== 'Alle' && !['🚨 Nachbestellen'].includes(currentFilter)) return a.kategorie === currentFilter;
+    return true;
+  }).filter(a => !search || a.name.toLowerCase().includes(search) || a.kategorie.toLowerCase().includes(search));
+
+  // Sort: empty first, then warn, then ok
+  filtered.sort((a, b) => {
+    const order = { 'status-empty': 0, 'status-warn': 1, 'status-ok': 2 };
+    return order[getStatus(a).cls] - order[getStatus(b).cls];
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('article-list').innerHTML = `
+      <div class="empty-state"><div class="icon">🔍</div><p>Keine Artikel gefunden</p></div>`;
+    return;
+  }
+
+  document.getElementById('article-list').innerHTML = filtered.map(a => {
+    const st = getStatus(a);
+    return `
+    <div class="article-card ${st.cls === 'status-warn' ? 'status-warn' : st.cls === 'status-empty' ? 'status-empty' : ''}" id="card-${a.id}">
+      <div class="card-top">
+        <div class="card-info">
+          <div class="card-name">${a.name}</div>
+          <div class="card-meta">
+            ${a.kategorie ? `<span class="tag">${a.kategorie}</span>` : ''}
+            <span class="status-badge ${st.cls}"><span class="dot"></span>${st.label}</span>
+          </div>
+        </div>
+        <div class="card-stock">
+          <div class="stock-num" id="stock-${a.id}">${a.bestand}</div>
+          <div class="stock-unit">${a.einheit}</div>
+        </div>
+      </div>
+      <div class="card-bottom">
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="changeQty('${a.id}', -1)">−</button>
+          <input class="qty-input" id="qty-${a.id}" type="number" value="1" min="0.5" step="0.5" />
+          <button class="qty-btn" onclick="changeQty('${a.id}', 1)">+</button>
+        </div>
+        <button class="btn-entnehmen" id="btn-${a.id}" onclick="entnehmen('${a.id}')">− Entnehmen</button>
+        <button class="btn-hinzufuegen" onclick="hinzufuegen('${a.id}')">+ Hinzufügen</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+function changeQty(id, delta) {
+  const input = document.getElementById(`qty-${id}`);
+  const current = parseFloat(input.value) || 1;
+  input.value = Math.max(0.5, current + delta);
+}
+
+// --- AIRTABLE UPDATE ---
+async function updateBestand(id, newVal) {
+  const res = await airtableFetch(`/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${config.token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ fields: { 'Aktueller Bestand': newVal } })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function entnehmen(id) {
+  const article = articles.find(a => a.id === id);
+  const qty = parseFloat(document.getElementById(`qty-${id}`).value) || 1;
+  const newVal = Math.max(0, article.bestand - qty);
+
+  const btn = document.getElementById(`btn-${id}`);
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  try {
+    await updateBestand(id, newVal);
+    article.bestand = newVal;
+    document.getElementById(`stock-${id}`).textContent = newVal;
+
+    // Update card status
+    const card = document.getElementById(`card-${id}`);
+    const st = getStatus(article);
+    card.className = `article-card ${st.cls === 'status-warn' ? 'status-warn' : st.cls === 'status-empty' ? 'status-empty' : ''}`;
+
+    // Update status badge
+    const badge = card.querySelector('.status-badge');
+    badge.className = `status-badge ${st.cls}`;
+    badge.innerHTML = `<span class="dot"></span>${st.label}`;
+
+    renderStats();
+    showToast(`✓ ${article.name}: ${qty} ${article.einheit} entnommen`, 'success');
+  } catch(e) {
+    showToast('Fehler beim Speichern', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '− Entnehmen';
+    document.getElementById(`qty-${id}`).value = 1;
+  }
+}
+
+async function hinzufuegen(id) {
+  const article = articles.find(a => a.id === id);
+  const qty = parseFloat(document.getElementById(`qty-${id}`).value) || 1;
+  const newVal = article.bestand + qty;
+
+  const btn = document.getElementById(`btn-${id}`);
+  btn.disabled = true;
+
+  try {
+    await updateBestand(id, newVal);
+    article.bestand = newVal;
+    document.getElementById(`stock-${id}`).textContent = newVal;
+
+    const card = document.getElementById(`card-${id}`);
+    const st = getStatus(article);
+    card.className = `article-card ${st.cls === 'status-warn' ? 'status-warn' : st.cls === 'status-empty' ? 'status-empty' : ''}`;
+    const badge = card.querySelector('.status-badge');
+    badge.className = `status-badge ${st.cls}`;
+    badge.innerHTML = `<span class="dot"></span>${st.label}`;
+
+    renderStats();
+    showToast(`✓ ${article.name}: +${qty} ${article.einheit} eingebucht`, 'success');
+  } catch(e) {
+    showToast('Fehler beim Speichern', 'error');
+  } finally {
+    btn.disabled = false;
+    document.getElementById(`qty-${id}`).value = 1;
+  }
+}
+
+// --- UI HELPERS ---
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+function openSettings() { document.getElementById('settings-modal').classList.add('open'); }
+function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+
+function resetApp() {
+  if (confirm('Verbindung wirklich trennen?')) {
+    localStorage.removeItem('gastro_config');
+    location.reload();
+  }
+}
+</script>
+</body>
+</html>
